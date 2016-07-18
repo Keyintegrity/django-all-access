@@ -46,8 +46,8 @@ setup(
         'requests>=2.0',
         'requests_oauthlib>=0.4.2',
         'oauthlib>=0.6.2',
+        'mock>=0.8',
     ),
-    tests_require=('mock>=0.8', ),
     test_suite="runtests.runtests",
     zip_safe=False,
 )
