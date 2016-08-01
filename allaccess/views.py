@@ -44,7 +44,7 @@ class OAuthRedirect(OAuthClientMixin, RedirectView):
 
     def get_callback_url(self, provider):
         "Return the callback url for this provider."
-        return reverse('allaccess-callback', kwargs={'provider': provider.name})
+        return reverse('allaccess-callback')
 
     def get_redirect_url(self, **kwargs):
         "Build redirect url for a given provider."
@@ -56,6 +56,13 @@ class OAuthRedirect(OAuthClientMixin, RedirectView):
         else:
             if not provider.enabled():
                 raise Http404('Provider %s is not enabled.' % name)
+
+            login_redirect_url = self.request.GET.get('next', '')
+            if not login_redirect_url.startswith('/'):
+                login_redirect_url = settings.LOGIN_REDIRECT_URL
+            self.request.session['login_redirect_url'] = login_redirect_url
+            self.request.session['oauth_provider'] = provider.name
+
             client = self.get_client(provider)
             callback = self.get_callback_url(provider)
             params = self.get_additional_parameters(provider)
@@ -69,6 +76,9 @@ class OAuthCallback(OAuthClientMixin, View):
 
     def get(self, request, *args, **kwargs):
         name = kwargs.get('provider', '')
+        if not name:
+            name = request.session.get('oauth_provider', '')
+
         try:
             provider = Provider.objects.get(name=name)
         except Provider.DoesNotExist:
@@ -115,7 +125,7 @@ class OAuthCallback(OAuthClientMixin, View):
 
     def get_login_redirect(self, provider, user, access, new=False):
         "Return url to redirect authenticated users."
-        return settings.LOGIN_REDIRECT_URL
+        return self.request.session.get('login_redirect_url', settings.LOGIN_REDIRECT_URL)
 
     def get_or_create_user(self, provider, access, info):
         "Create a shell auth.User."
