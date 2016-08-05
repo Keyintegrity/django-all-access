@@ -25,11 +25,11 @@ class OAuthClientMixin(object):
 
     client_class = None
 
-    def get_client(self, provider):
+    def get_client(self, provider, **kwargs):
         "Get instance of the OAuth client for this provider."
         if self.client_class is not None:
-            return self.client_class(provider)
-        return get_client(provider)
+            return self.client_class(provider, **kwargs)
+        return get_client(provider, **kwargs)
 
 
 class OAuthRedirect(OAuthClientMixin, RedirectView):
@@ -73,6 +73,7 @@ class OAuthCallback(OAuthClientMixin, View):
     "Base OAuth callback view."
 
     provider_id = None
+    verify_ssl = True
 
     def get(self, request, *args, **kwargs):
         name = kwargs.get('provider', '')
@@ -86,7 +87,7 @@ class OAuthCallback(OAuthClientMixin, View):
         else:
             if not provider.enabled():
                 raise Http404('Provider %s is not enabled.' % name)
-            client = self.get_client(provider)
+            client = self.get_client(provider, verify_ssl=self.verify_ssl)
             callback = self.get_callback_url(provider)
             # Fetch access token
             raw_token = client.get_access_token(self.request, callback=callback)

@@ -18,9 +18,10 @@ logger = logging.getLogger('allaccess.clients')
 
 class BaseOAuthClient(object):
 
-    def __init__(self, provider, token=''):
+    def __init__(self, provider, token='', **kwargs):
         self.provider = provider
         self.token = token
+        self.verify_ssl = kwargs.get('verify_ssl', True)
 
     def get_access_token(self, request, callback=None):
         "Fetch access token from callback request."
@@ -55,6 +56,7 @@ class BaseOAuthClient(object):
 
     def request(self, method, url, **kwargs):
         "Build remote url request."
+        kwargs['verify'] = self.verify_ssl
         return request(method, url, **kwargs)
 
     @property
@@ -228,9 +230,9 @@ class OAuth2Client(BaseOAuthClient):
         return 'allaccess-{0}-request-state'.format(self.provider.name)
 
 
-def get_client(provider, token=''):
+def get_client(provider, token='', **kwargs):
     "Return the API client for the given provider."
     cls = OAuth2Client
     if provider.request_token_url:
         cls = OAuthClient
-    return cls(provider, token)
+    return cls(provider, token, **kwargs)
